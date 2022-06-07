@@ -1,13 +1,14 @@
 use aes::*;
+use rand::prelude::*;
+use std::io;
+use std::io::Write;
+use std::time::Instant;
+use t_table::*;
 
 fn main() {
-    let text: [u8;16] = [0;16];
-    let key: [u8;16] = [
-        0x00, 0x04, 0x08, 0x0c,
-        0x01, 0x05, 0x09, 0x0d,
-        0x02, 0x06, 0x0a, 0x0e,
-        0x03, 0x07, 0x0b, 0x0f,
-    ];
+    let mut rng = rand::thread_rng();
+    let text: [u8; 16] = rng.gen();
+    let key: [u8; 16] = rng.gen();
 
     let gf_text = GF256::from_u8array(&text).unwrap();
     dump_array16(&gf_text, "text");
@@ -17,4 +18,57 @@ fn main() {
     let ans = aes_16(&text, &key);
     let gf_ans = GF256::from_u8array(&ans).unwrap();
     dump_array16(&gf_ans, "Cryptgram");
+
+    let ans_t = aes_16_t(&text, &key);
+    let gf_ans_t = GF256::from_u8array(&ans_t).unwrap();
+    dump_array16(&gf_ans_t, "Cryptgram(t-table)");
+
+    if ans != ans_t {
+        println!("Error: aes_16 and aes_16_t are different.");
+        return;
+    } else {
+        println!("Success: aes_16 and aes_16_t are same.");
+    }
+
+    // Battle Mode
+    let mut times_str = String::new();
+    print!("How many times do you want to run?\n> ");
+    io::stdout().flush().unwrap();
+    io::stdin().read_line(&mut times_str).unwrap();
+    let times = times_str.trim().parse::<usize>().unwrap();
+    let mut texts: Vec<[u8; 16]> = Vec::with_capacity(times);
+    let mut keys: Vec<[u8; 16]> = Vec::with_capacity(times);
+
+    for _ in 0..times {
+        texts.push(rng.gen());
+        keys.push(rng.gen());
+    }
+
+    // check correctness
+    let mut correct = 0;
+    for i in 0..times {
+        let ans = aes_16(&texts[i], &keys[i]);
+        let ans_t = aes_16_t(&texts[i], &keys[i]);
+        let ans_dec = inv_aes_16(&ans_t, &keys[i]);
+
+        if ans == ans_t && ans_dec == texts[i] {
+            correct += 1;
+        }
+    }
+    println!("correctness: {}/{}", correct, times);
+
+    // battle
+    let start = Instant::now();
+    for i in 0..times {
+        let _ = aes_16(&texts[i], &keys[i]);
+    }
+    let elapsed = start.elapsed();
+    println!("aes_16: {} ms", elapsed.as_millis());
+
+    let start = Instant::now();
+    for i in 0..times {
+        let _ = aes_16_t(&texts[i], &keys[i]);
+    }
+    let elapsed = start.elapsed();
+    println!("aes_16_t: {} ms", elapsed.as_millis());
 }

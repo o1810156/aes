@@ -2,9 +2,16 @@
 name = "aes"
 version = "0.1.0"
 authors = ["anotherhollow1125 <anotherhollow1125@gmail.com>"]
-edition = "2018"
+edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-lazy_static = "*"
+lazy_static = "1.4.0"
+const_panic = "0.2.3"
+rand = "0.8.5"
+
+[features]
+default = ["t_table"]
+t_table = []
+const_gmul = []
