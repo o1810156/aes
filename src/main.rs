@@ -7,6 +7,7 @@ use t_table::*;
 
 fn main() {
     let mut rng = rand::thread_rng();
+    /*
     let text: [u8; 16] = rng.gen();
     let key: [u8; 16] = rng.gen();
 
@@ -29,46 +30,56 @@ fn main() {
     } else {
         println!("Success: aes_16 and aes_16_t are same.");
     }
+    */
 
-    // Battle Mode
-    let mut times_str = String::new();
-    print!("How many times do you want to run?\n> ");
-    io::stdout().flush().unwrap();
-    io::stdin().read_line(&mut times_str).unwrap();
-    let times = times_str.trim().parse::<usize>().unwrap();
-    let mut texts: Vec<[u8; 16]> = Vec::with_capacity(times);
-    let mut keys: Vec<[u8; 16]> = Vec::with_capacity(times);
+    loop {
+        // Battle Mode
+        let mut times_str = String::new();
+        print!("How many times? > ");
+        io::stdout().flush().unwrap();
+        io::stdin().read_line(&mut times_str).unwrap();
 
-    for _ in 0..times {
-        texts.push(rng.gen());
-        keys.push(rng.gen());
-    }
+        let times = match times_str.trim().parse::<usize>() {
+            Ok(num) => num,
+            Err(_) => {
+                return;
+            }
+        };
 
-    // check correctness
-    let mut correct = 0;
-    for i in 0..times {
-        let ans = aes_16(&texts[i], &keys[i]);
-        let ans_t = aes_16_t(&texts[i], &keys[i]);
-        let ans_dec = inv_aes_16(&ans_t, &keys[i]);
+        let mut texts: Vec<[u8; 16]> = Vec::with_capacity(times);
+        let mut keys: Vec<[u8; 16]> = Vec::with_capacity(times);
 
-        if ans == ans_t && ans_dec == texts[i] {
-            correct += 1;
+        for _ in 0..times {
+            texts.push(rng.gen());
+            keys.push(rng.gen());
         }
-    }
-    println!("correctness: {}/{}", correct, times);
 
-    // battle
-    let start = Instant::now();
-    for i in 0..times {
-        let _ = aes_16(&texts[i], &keys[i]);
-    }
-    let elapsed = start.elapsed();
-    println!("aes_16: {} ms", elapsed.as_millis());
+        // check correctness
+        let mut correct = 0;
+        for i in 0..times {
+            let ans = aes_16(&texts[i], &keys[i]);
+            let ans_t = aes_16_t(&texts[i], &keys[i]);
+            let ans_dec = inv_aes_16(&ans_t, &keys[i]);
 
-    let start = Instant::now();
-    for i in 0..times {
-        let _ = aes_16_t(&texts[i], &keys[i]);
+            if ans == ans_t && ans_dec == texts[i] {
+                correct += 1;
+            }
+        }
+        println!("correctness: {}/{}", correct, times);
+
+        // battle
+        let start = Instant::now();
+        for i in 0..times {
+            let _ = aes_16(&texts[i], &keys[i]);
+        }
+        let elapsed = start.elapsed();
+        println!("aes_16: {} ms", elapsed.as_millis());
+
+        let start = Instant::now();
+        for i in 0..times {
+            let _ = aes_16_t(&texts[i], &keys[i]);
+        }
+        let elapsed = start.elapsed();
+        println!("aes_16_t: {} ms", elapsed.as_millis());
     }
-    let elapsed = start.elapsed();
-    println!("aes_16_t: {} ms", elapsed.as_millis());
 }
