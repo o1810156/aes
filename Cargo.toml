@@ -15,3 +15,4 @@ rand = "0.8.5"
 default = ["t_table"]
 t_table = []
 const_gmul = []
+nightly = ["const_gmul"]

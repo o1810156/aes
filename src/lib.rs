@@ -1,3 +1,6 @@
+#![cfg_attr(feature = "nightly", feature(const_eval_limit))]
+#![cfg_attr(feature = "nightly", const_eval_limit = "1000000000")]
+
 #[macro_use]
 extern crate lazy_static;
 use std::fmt;
@@ -120,9 +123,9 @@ const fn const_gmul(x: u8, y: u8) -> u8 {
     r as u8
 }
 
-/* exceeded interpreter step limit (see `#[const_eval_limit]`) と怒られてしまいました... */
-/*
-#[cfg(feature = "const_gmul")]
+/* stableだとexceeded interpreter step limit (see `#[const_eval_limit]`) と怒られてしまいました... */
+// for nightly
+#[cfg(all(feature = "const_gmul", feature = "nightly"))]
 const fn gmul_lookup() -> [[u8; 256]; 256] {
     let mut res = [[0; 256]; 256];
 
@@ -141,9 +144,17 @@ const fn gmul_lookup() -> [[u8; 256]; 256] {
     }
     res
 }
-*/
 
-#[cfg(feature = "const_gmul")]
+#[cfg(all(feature = "const_gmul", feature = "nightly"))]
+const GMUL_LOOKUP: [[u8; 256]; 256] = gmul_lookup();
+
+#[cfg(all(feature = "const_gmul", feature = "nightly"))]
+fn gmul(x: u8, y: u8) -> u8 {
+    GMUL_LOOKUP[x as usize][y as usize]
+}
+
+// for stable
+#[cfg(all(feature = "const_gmul", not(feature = "nightly")))]
 const fn gmul_lookup_for_2_3() -> [[u8; 256]; 256] {
     let mut res = [[0; 256]; 256];
 
@@ -161,11 +172,18 @@ const fn gmul_lookup_for_2_3() -> [[u8; 256]; 256] {
     res
 }
 
-#[cfg(feature = "const_gmul")]
+#[cfg(all(feature = "const_gmul", not(feature = "nightly")))]
 const GMUL_LOOKUP_FOR_2_3: [[u8; 256]; 256] = gmul_lookup_for_2_3();
 
-#[cfg(feature = "const_gmul")]
+#[cfg(all(feature = "const_gmul", not(feature = "nightly")))]
 fn gmul(x: u8, y: u8) -> u8 {
+    if x == 1 {
+        return y;
+    }
+    if y == 1 {
+        return x;
+    }
+
     if x == 2 || x == 3 || y == 2 || y == 3 {
         GMUL_LOOKUP_FOR_2_3[x as usize][y as usize]
     } else {
